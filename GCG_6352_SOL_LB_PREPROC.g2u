@@ -1,0 +1,366 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.F_PreProcMsgBox..Create(BaseForm)
+Gui.F_PreProcMsgBox..Caption("Print Sales Order Labels")
+Gui.F_PreProcMsgBox..Size(4530,1695)
+Gui.F_PreProcMsgBox..MinX(0)
+Gui.F_PreProcMsgBox..MinY(0)
+Gui.F_PreProcMsgBox..Position(0,0)
+Gui.F_PreProcMsgBox..AlwaysOnTop(False)
+Gui.F_PreProcMsgBox..FontName("Tahoma")
+Gui.F_PreProcMsgBox..FontSize(8.25)
+Gui.F_PreProcMsgBox..ControlBox(True)
+Gui.F_PreProcMsgBox..MaxButton(False)
+Gui.F_PreProcMsgBox..MinButton(True)
+Gui.F_PreProcMsgBox..MousePointer(0)
+Gui.F_PreProcMsgBox..Moveable(True)
+Gui.F_PreProcMsgBox..Sizeable(False)
+Gui.F_PreProcMsgBox..ShowInTaskBar(True)
+Gui.F_PreProcMsgBox..TitleBar(True)
+Gui.F_PreProcMsgBox..Event(UnLoad,F_PreProcMsgBox_UnLoad)
+Gui.F_PreProcMsgBox.lbl1.Create(Label,"Select option to print labels",True,1950,195,0,1275,255,True,0,"Tahoma",8.25,,0,0)
+Gui.F_PreProcMsgBox.lbl1.BorderStyle(0)
+Gui.F_PreProcMsgBox.cmdSalesOrder.Create(Button)
+Gui.F_PreProcMsgBox.cmdSalesOrder.Enabled(True)
+Gui.F_PreProcMsgBox.cmdSalesOrder.Visible(True)
+Gui.F_PreProcMsgBox.cmdSalesOrder.Zorder(0)
+Gui.F_PreProcMsgBox.cmdSalesOrder.Size(1815,345)
+Gui.F_PreProcMsgBox.cmdSalesOrder.Position(345,660)
+Gui.F_PreProcMsgBox.cmdSalesOrder.Caption("by Sales Order")
+Gui.F_PreProcMsgBox.cmdSalesOrder.FontName("Tahoma")
+Gui.F_PreProcMsgBox.cmdSalesOrder.FontSize(8.25)
+Gui.F_PreProcMsgBox.cmdSalesOrder.Event(Click,cmdSalesOrder_Click)
+Gui.F_PreProcMsgBox.cmdSOLine.Create(Button)
+Gui.F_PreProcMsgBox.cmdSOLine.Enabled(True)
+Gui.F_PreProcMsgBox.cmdSOLine.Visible(True)
+Gui.F_PreProcMsgBox.cmdSOLine.Zorder(0)
+Gui.F_PreProcMsgBox.cmdSOLine.Size(1815,345)
+Gui.F_PreProcMsgBox.cmdSOLine.Position(2400,660)
+Gui.F_PreProcMsgBox.cmdSOLine.Caption("by Sales Order Line")
+Gui.F_PreProcMsgBox.cmdSOLine.FontName("Tahoma")
+Gui.F_PreProcMsgBox.cmdSOLine.FontSize(8.25)
+Gui.F_PreProcMsgBox.cmdSOLine.Event(Click,cmdSOLine_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Customer: Davico
+'Developer: FEQ (Sisco)
+'Date: 05/13/2021
+'This is a pre-processor for sales order lines labels. 
+'The program will run from a custom menu item. When the menu item is clicked, the user will be prompted to select a Sales order.
+'The program will only print lines that are still open and have a positive BO quantity. One label will be printed for each piece in the order line.
+'The labels printed will be determined by the customer in the order and the type of labels (boxed or unboxed)
+'Most of the data getting generated into the label is being saved into INV_EXTRA, which is a custom table that was created from ARC 3591
+'
+'Translation of table structure to how they use it:
+'INV_EXTRA COLUMN --------------- Field Label
+'USER1 -------------------------- Part Description
+'USER2 -------------------------- NOT IN USE
+'USER3 -------------------------- UPC
+'USER4 -------------------------- Davico Barcode
+'USER5 -------------------------- Comp 1 (Gask 1)
+'USER6 -------------------------- Comp 1 qty
+'USER7 -------------------------- Comp 2 (Gask 2)
+'USER8 -------------------------- Comp 2 qty
+'USER9 -------------------------- Comp 3 (Gask 3)
+'USER10 ------------------------- Comp 3 qty
+'USER11 ------------------------- Comp 4 (Gask 4)
+'USER12 ------------------------- Comp 4 qty
+'USER13 ------------------------- AI Manufacturer UPC
+'USER14 ------------------------- AI Number
+'USER15 ------------------------- Autopart Source
+'USER16 ------------------------- APS UPC
+'USER17 ------------------------- Auto Camping
+'USER18 ------------------------- HARDWARE NOTE
+'USER19 ------------------------- 800 Radiator
+'USER20 ------------------------- Interchange Part Number
+'USER21 ------------------------- Interchange UPC
+
+F.Intrinsic.Control.Try
+
+F.ODBC.Connection!conx.OpenCompanyConnection
+
+''To test
+''
+'F.ODBC.Connection!conx.OpenLocalRecordsetRO("rstExtra", "Select USER1, USER3, USER4, USER5, USER6, USER7, USER8, USER9, USER10, USER11, USER12, USER13, USER14, USER15, USER16, USER17, USER18, USER19, USER20, USER21 from INV_EXTRA where PART <> ''")
+'F.Intrinsic.Control.If(V.ODBC.conx!rstExtra.EOF, =, False)
+'	
+'F.Intrinsic.Control.EndIf
+
+''
+''----------------------------------------------
+
+F.Intrinsic.UI.SetBrowserHotTypeAhead(True)
+
+Gui.F_PreProcMsgBox..Show
+
+F.Intrinsic.Control.Catch
+F.Intrinsic.Control.CallSub(Error, "Subroutine", V.Ambient.CurrentSubroutine, "ErrorDesc", V.Ambient.ErrorDescription, "ErrorNo", V.Ambient.ErrorNumber)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.Error.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare(String, "")
+
+F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}", V.Caller.ScriptFile, V.Ambient.Newline, V.Args.Subroutine, V.Args.ErrorNo, V.Args.ErrorDesc, V.Ambient.GABVersion, V.Local.sError)
+
+F.Intrinsic.UI.CloseWaitDialog
+
+F.Intrinsic.UI.Msgbox(V.Local.sError, "CRITICAL ERROR")
+
+F.Intrinsic.Control.CallSub(Unload)
+
+F.Intrinsic.Control.Catch
+F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Error.End
+
+Program.Sub.Unload.Start
+F.Intrinsic.Control.Try
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Unload.End
+
+Program.Sub.SalesOrderBrowser.Start
+F.Intrinsic.Control.Try
+V.Local.sBasis.Declare(String, "")
+V.Local.sTitles.Declare(String, "")
+V.Local.sReturn.Declare(String, "")
+V.Local.iWidths.Declare(Long, 0)
+
+'We need to build our own browser
+V.Local.sBasis.Set("Select ORDER_NO, CUSTOMER, DATE_ORDER, CUSTOMER_PO from V_ORDER_HEADER order by ORDER_NO")
+F.Intrinsic.String.Split("Order No.*!*Customer*!*Order Date*!*Customer PO", "*!*", V.Local.sTitles)
+F.Intrinsic.String.Split("1000*!*1000*!*1000*!*1000", "*!*", V.Local.iWidths)
+
+F.Intrinsic.UI.Browser("Sales Order Browser", "conx", V.Local.sBasis, V.Local.sTitles, V.Local.iWidths, V.Local.sReturn)
+
+F.Intrinsic.Control.If(V.Local.sReturn, <>, "***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sReturn, "*!*", V.Local.sReturn)
+	'We can set the return variables
+	F.Intrinsic.Variable.AddRV("SalesOrder", V.Local.sReturn(0).Trim)
+	F.Intrinsic.Variable.AddRV("CustomerNo", V.Local.sReturn(1).Trim)
+F.Intrinsic.Control.Else
+	'We just exit out of the program
+	F.Intrinsic.Control.CallSub(Unload)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+F.Intrinsic.Control.CallSub(Error, "Subroutine", V.Ambient.CurrentSubroutine, "ErrorDesc", V.Ambient.ErrorDescription, "ErrorNo", V.Ambient.ErrorNumber)
+F.Intrinsic.Control.EndTry
+Program.Sub.SalesOrderBrowser.End
+
+Program.Sub.GenerateData.Start
+F.Intrinsic.Control.Try
+V.Local.sSql.Declare(String, "")
+V.Local.sPartNo.Declare(String, "")
+V.Local.sPartRev.Declare(String, "")
+V.Local.sDescription.Declare(String, "")
+V.Local.sUPCNO.Declare(String, "")
+V.Local.sError.Declare(String, "")
+V.Local.sCustBrev.Declare(String, "")
+V.Local.sLabelName.Declare(String, "")
+V.Local.sCont.Declare(String, "")
+V.Local.bCheck.Declare(Boolean, False)
+V.Local.iLoop.Declare(Long, 0)
+
+'The type of label that gets printed will be determined by the customer in the Sales Order:
+'This is where you can add more customers to the labels if you want to use the existing labels for additional customers
+'If you need to have more customers use the label '12', you need to change the .Case to .CaseAny
+F.Intrinsic.Control.SelectCase(V.Args.CustomerNo.Trim)
+	
+	F.Intrinsic.Control.CaseAny("1376", "1377", "1379", "1380", "1381")
+		V.Local.sCustBrev.Set("13")
+	F.Intrinsic.Control.CaseAny("0008", "0009")
+		V.Local.sCustBrev.Set("00")
+	F.Intrinsic.Control.Case("1271")
+		V.Local.sCustBrev.Set("12")
+	F.Intrinsic.Control.CaseElse
+		V.Local.sCustBrev.Set("GEN")
+F.Intrinsic.Control.EndSelect
+
+'We are going to create a datatable that GAB will use to print the labels 
+F.Data.DataTable.Create("dtAllData", True)
+F.Data.DataTable.AddColumn("dtAllData", "PART_NO", "String")
+F.Data.DataTable.AddColumn("dtAllData", "DESCRIPTION", "String")
+F.Data.DataTable.AddColumn("dtAllData", "CUSTOMER", "String")
+F.Data.DataTable.AddColumn("dtAllData", "ORDER_NO", "String")
+F.Data.DataTable.AddColumn("dtAllData", "ORDER_LINE", "String")
+F.Data.DataTable.AddColumn("dtAllData", "BOX_FLAG", "String")
+
+'All other fields will be filled as needed below
+F.Data.DataTable.AddColumn("dtAllData", "UPC_NO", "String")
+F.Data.DataTable.AddColumn("dtAllData", "800_P_NO", "String")
+F.Data.DataTable.AddColumn("dtAllData", "DAV_P_NO", "String")
+F.Data.DataTable.AddColumn("dtAllData", "AUTO_NO", "String")
+F.Data.DataTable.AddColumn("dtAllData", "AUTO_UPC", "String")
+F.Data.DataTable.AddColumn("dtAllData", "AUTO_HRDWR", "String")
+F.Data.DataTable.AddColumn("dtAllData", "AI_NO", "String")
+F.Data.DataTable.AddColumn("dtAllData", "AI_UPC", "String")
+F.Data.DataTable.AddColumn("dtAllData", "ICHANGE_NO", "String")
+F.Data.DataTable.AddColumn("dtAllData", "EXT_DESC", "String")
+F.Data.DataTable.AddColumn("dtAllData", "GASK_1", "String")
+F.Data.DataTable.AddColumn("dtAllData", "COMP_1", "String")
+F.Data.DataTable.AddColumn("dtAllData", "GASK_2", "String")
+F.Data.DataTable.AddColumn("dtAllData", "COMP_2", "String")
+F.Data.DataTable.AddColumn("dtAllData", "GASK_3", "String")
+F.Data.DataTable.AddColumn("dtAllData", "COMP_3", "String")
+F.Data.DataTable.AddColumn("dtAllData", "GASK_4", "String")
+F.Data.DataTable.AddColumn("dtAllData", "COMP_4", "String")
+F.Data.DataTable.AddColumn("dtAllData", "LABEL_NAME", "String")
+F.Data.DataTable.AddColumn("dtAllData", "LABEL_COPY", "String")
+
+F.Intrinsic.Control.If(V.Args.Line,=,"ALL")
+	F.Intrinsic.String.Build("Select ORDER_NO, RECORD_NO, CUSTOMER, QTY_BO, PART, DESCRIPTION, LOCATION from V_ORDER_LINES where ORDER_NO = '{0}' and QTY_BO > 0 order by RECORD_NO ASC", V.Args.SalesOrder, V.Local.sSql)
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Build("Select ORDER_NO, RECORD_NO, CUSTOMER, QTY_BO, PART, DESCRIPTION, LOCATION from V_ORDER_LINES where ORDER_NO = '{0}' and RECORD_NO = '{1}' and QTY_BO > 0 order by RECORD_NO ASC", V.Args.SalesOrder, V.Args.Line, V.Local.sSql)
+F.Intrinsic.Control.EndIf
+F.Data.DataTable.CreateFromSQL("dtOrderLines", "conx", V.Local.sSql, True)
+
+F.Intrinsic.Control.If(V.DataTable.dtOrderLines.RowCount, >, 0)
+	
+	F.Intrinsic.Control.For(V.Local.iLoop, 0, V.DataTable.dtOrderLines.RowCount--, 1)
+		
+		'Let us determine what label to print for the line!
+		F.Intrinsic.String.Build("Select TOP 1 CNTNR_CODE from INV_CNTR_INFO where PART = '{0}'", V.DataTable.dtOrderLines.PART(V.Local.iLoop)!FieldValTrim, V.Local.sSql)
+		'F.Intrinsic.String.Build("Select TOP 1 CNTNR_CODE from INV_CNTR_INFO where PART = '{0}' and SEQ = '000001'", V.DataTable.dtOrderLines.PART(V.Local.iLoop)!FieldValTrim, V.Local.sSql)
+		F.ODBC.Connection!conx.ExecuteAndReturn(V.Local.sSql, V.Local.sCont)
+		
+		F.Intrinsic.Control.If(V.Local.sCont.Trim, <>, "")
+			
+			F.Intrinsic.String.IsInString(V.Local.sCont.UCase, "UNBOX", True, V.Local.bCheck)
+			
+			F.Intrinsic.Control.If(V.Local.bCheck)
+				F.Intrinsic.String.Build("GCG_6352_UNB_{0}.lab", V.Local.sCustBrev.UCase, V.Local.sLabelName)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("GCG_6352_BOX_{0}.lab", V.Local.sCustBrev.UCase, V.Local.sLabelName)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("GCG_6352_BOX_{0}.lab", V.Local.sCustBrev.UCase, V.Local.sLabelName)
+'			V.Local.sLabelName.Set("")
+		F.Intrinsic.Control.EndIf
+		
+		F.Intrinsic.String.Build("Select USER1, USER3, USER4, USER5, USER6, USER7, USER8, USER9, USER10, USER11, USER12, USER13, USER14, USER15, USER16, USER17, USER18, USER19, USER20, USER21 from INV_EXTRA where PART = '{0}'", V.DataTable.dtOrderLines.PART(V.Local.iLoop)!FieldValTrim, V.Local.sSql)
+		
+		F.ODBC.Connection!conx.OpenLocalRecordsetRO("rstExtra", V.Local.sSql)
+		F.Intrinsic.Control.If(V.ODBC.conx!rstExtra.EOF, =, False)
+			
+			F.Data.DataTable.AddRow("dtAllData", "PART_NO", V.DataTable.dtOrderLines.PART(V.Local.iLoop)!FieldValTrim, "DESCRIPTION", V.DataTable.dtOrderLines.DESCRIPTION(V.Local.iLoop)!FieldValTrim, "CUSTOMER", V.DataTable.dtOrderLines.CUSTOMER(V.Local.iLoop)!FieldValTrim, "ORDER_NO", V.DataTable.dtOrderLines.ORDER_NO(V.Local.iLoop)!FieldValTrim, "ORDER_LINE", V.DataTable.dtOrderLines.RECORD_NO(V.Local.iLoop)!FieldValTrim, "BOX_FLAG", V.Local.bCheck, "UPC_NO", V.ODBC.conx!rstExtra.FieldVal!USER3, "800_P_NO", V.ODBC.conx!rstExtra.FieldVal!USER19, "DAV_P_NO", V.ODBC.conx!rstExtra.FieldVal!USER4, "AUTO_NO", V.ODBC.conx!rstExtra.FieldVal!USER15, "AUTO_UPC", V.ODBC.conx!rstExtra.FieldVal!USER16, "AUTO_HRDWR", V.ODBC.conx!rstExtra.FieldVal!USER18, "AI_NO", V.ODBC.conx!rstExtra.FieldVal!USER14, "AI_UPC", V.ODBC.conx!rstExtra.FieldVal!USER13, "ICHANGE_NO", V.ODBC.conx!rstExtra.FieldVal!USER20, "EXT_DESC", V.ODBC.conx!rstExtra.FieldVal!USER1, "GASK_1", V.ODBC.conx!rstExtra.FieldVal!USER5, "COMP_1", V.ODBC.conx!rstExtra.FieldVal!USER6, "GASK_2", V.ODBC.conx!rstExtra.FieldVal!USER7, "COMP_2", V.ODBC.conx!rstExtra.FieldVal!USER8, "GASK_3", V.ODBC.conx!rstExtra.FieldVal!USER9, "COMP_3", V.ODBC.conx!rstExtra.FieldVal!USER10, "GASK_4", V.ODBC.conx!rstExtra.FieldVal!USER11, "COMP_4", V.ODBC.conx!rstExtra.FieldVal!USER12, "LABEL_NAME", V.Local.sLabelName, "LABEL_COPY", V.DataTable.dtOrderLines.QTY_BO(V.Local.iLoop)!FieldVal)
+			
+			F.Intrinsic.Control.CallSub(PrintLabels)
+			 
+		F.Intrinsic.Control.Else
+			'No data was found for that part. can we print a label in this circumstances? Should we just record it?
+			
+		F.Intrinsic.Control.EndIf
+		
+		F.ODBC.conx!rstExtra.Close
+		
+		F.Data.DataTable.DeleteRow("dtAllData")
+		
+	F.Intrinsic.Control.Next(V.Local.iLoop)
+	
+F.Intrinsic.Control.Else
+	
+	'No data for the information pulled
+	
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+F.Intrinsic.Control.CallSub(Error, "Subroutine", V.Ambient.CurrentSubroutine, "ErrorDesc", V.Ambient.ErrorDescription, "ErrorNo", V.Ambient.ErrorNumber)
+F.Intrinsic.Control.EndTry
+Program.Sub.GenerateData.End
+
+Program.Sub.PrintLabels.Start
+F.Intrinsic.Control.Try
+V.Local.iReportID.Declare(Long, 0)
+V.Local.iRunID.Declare(Long, 0)
+V.Local.iLogID.Declare(Long, 0)
+V.Local.sLabelName.Declare(String, "")
+
+'We should only get to this point after we added a line in the datatable "dtAllData" so we dont need to check that it is populated
+V.Local.sLabelName.Set(V.DataTable.dtAllData(0).LABEL_NAME!FieldValTrim)
+
+F.Global.BI.GetRunID(V.Local.iRunID)
+F.Global.BI.GetIDFromName(V.Local.sLabelName, V.Local.iReportID)
+F.Global.BI.StartLogging(V.Local.iRunID, V.Local.iReportID, -1, "", V.Local.iLogID)
+
+F.Global.BI.StopLogging(V.Local.iLogID)
+
+F.Global.BI.PrintCodeSoftLabelFromDatatable(V.Local.iRunID, V.Local.iLogID, "dtAllData", "", True)
+
+F.Intrinsic.Control.Catch
+F.Intrinsic.Control.CallSub(Error, "Subroutine", V.Ambient.CurrentSubroutine, "ErrorDesc", V.Ambient.ErrorDescription, "ErrorNo", V.Ambient.ErrorNumber)
+F.Intrinsic.Control.EndTry
+Program.Sub.PrintLabels.End
+
+Program.Sub.F_PreProcMsgBox_UnLoad.Start
+F.Intrinsic.Control.CallSub(UnLoad)
+Program.Sub.F_PreProcMsgBox_UnLoad.End
+
+Program.Sub.cmdSalesOrder_Click.Start
+
+Gui.F_PreProcMsgBox..Visible(False)
+
+F.Intrinsic.Control.CallSub(SalesOrderBrowser)
+
+F.Intrinsic.Control.CallSub(GenerateData, "SalesOrder", V.Args.SalesOrder, "Line", "ALL", "CustomerNo", V.Args.CustomerNo)
+
+F.ODBC.Connection!conx.Close
+
+Program.Sub.cmdSalesOrder_Click.End
+
+Program.Sub.cmdSOLine_Click.Start
+
+Gui.F_PreProcMsgBox..Visible(False)
+
+F.Intrinsic.Control.CallSub(SalesOrderLineBrowser)
+
+F.Intrinsic.Control.CallSub(GenerateData, "SalesOrder", V.Args.SalesOrder, "Line", V.Args.Line, "CustomerNo", V.Args.CustomerNo)
+
+F.ODBC.Connection!conx.Close
+
+Program.Sub.cmdSOLine_Click.End
+
+Program.Sub.SalesOrderLineBrowser.Start
+F.Intrinsic.Control.Try
+V.Local.sBasis.Declare(String, "")
+V.Local.sTitles.Declare(String, "")
+V.Local.sReturn.Declare(String, "")
+V.Local.iWidths.Declare(Long, 0)
+
+'We need to build our own browser
+V.Local.sBasis.Set("Select V_ORDER_HEADER.ORDER_NO, V_ORDER_HEADER.CUSTOMER, V_ORDER_HEADER.DATE_ORDER, rtrim(V_ORDER_HEADER.CUSTOMER_PO), left(V_ORDER_LINES.RECORD_NO, 3),  rtrim(V_ORDER_LINES.PART), rtrim(V_ORDER_LINES.DESCRIPTION), PRODUCT_LINE from V_ORDER_LINES left join V_ORDER_HEADER on V_ORDER_LINES.ORDER_NO = V_ORDER_HEADER.ORDER_NO order by V_ORDER_HEADER.ORDER_NO")
+F.Intrinsic.String.Split("Order No.*!*Customer*!*Order Date*!*Customer PO*!*Line*!*Part*!*Description*!*PL", "*!*", V.Local.sTitles)
+F.Intrinsic.String.Split("750*!*750*!*750*!*1000*!*400*!*1000*!*1000*!*250", "*!*", V.Local.iWidths)
+
+F.Intrinsic.UI.Browser("Sales Order Browser", "conx", V.Local.sBasis, V.Local.sTitles, V.Local.iWidths, V.Local.sReturn)
+
+F.Intrinsic.Control.If(V.Local.sReturn, <>, "***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sReturn, "*!*", V.Local.sReturn)
+	'We can set the return variables
+	F.Intrinsic.Variable.AddRV("SalesOrder", V.Local.sReturn(0).Trim)
+	F.Intrinsic.Variable.AddRV("CustomerNo", V.Local.sReturn(1).Trim)
+	F.Intrinsic.String.Build("{0}0",V.Local.sReturn(4),V.Local.sReturn(4))
+	F.Intrinsic.Variable.AddRV("Line", V.Local.sReturn(4))
+F.Intrinsic.Control.Else
+	'We just exit out of the program
+	F.Intrinsic.Control.CallSub(Unload)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+F.Intrinsic.Control.CallSub(Error, "Subroutine", V.Ambient.CurrentSubroutine, "ErrorDesc", V.Ambient.ErrorDescription, "ErrorNo", V.Ambient.ErrorNumber)
+F.Intrinsic.Control.EndTry
+Program.Sub.SalesOrderLineBrowser.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$bbaker$}$20240307102504253$}$pM7xsHplA2E9VCTenDTJ47gi1rF/t66Ws4aiaH4NyOsN/TZtZ22aBns9jwKgEnzfSnCj5dF7eXA=
+Program.Sub.Comments.End
